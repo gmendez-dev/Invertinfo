@@ -1,0 +1,106 @@
+{% include("encabezado6.html") %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <title>Editar Empresa</title>
+
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='images/fondo.jpg') }}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-attachment: fixed;
+            margin: 0;
+            padding-top: 70px; /* Espacio para el encabezado fijo */
+        }
+        .table-container {
+            width: 40%;
+            margin-top: 120px; /* Ajusta el espacio superior para bajar la tabla */
+            float: left;
+            background-color: #ffffff;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .form-container {
+            width: 50%;
+            margin-top: 120px; /* Ajusta el espacio superior para bajar el formulario */
+            margin-left: 45%;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Encabezado fijo -->
+    {% include("encabezado6.html") %}
+
+    <div class="container-fluid">
+        <!-- Tabla alineada a la izquierda -->
+        <div class="table-container">
+            <h2>Lista de Empresas por ID</h2>
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">TIPO DE EMPRESA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><th scope="row">1</th><td>Alimentos y bebidas</td></tr>
+                    <tr><th scope="row">2</th><td>Construcción e Infraestructura</td></tr>
+                    <tr><th scope="row">3</th><td>Salud y Limpieza</td></tr>
+                    <tr><th scope="row">4</th><td>Telecomunicaciones</td></tr>
+                    <tr><th scope="row">5</th><td>Entretenimiento</td></tr>
+                    <tr><th scope="row">6</th><td>Financiero</td></tr>
+                    <tr><th scope="row">7</th><td>Otro</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Formulario alineado a la derecha -->
+        <div class="form-container">
+            <form action="/editar_empresa/{{ empresas.idempresa }}" method="post">
+                <h2 class="text-center mb-4">Editar Empresa</h2>
+                
+                <input type="hidden" class="form-control" id="idempresa" name="txtidempresa" value="{{ empresas.idempresa }}">
+                
+                <div class="form-group mb-3">
+                    <label for="nombreCo">Nombre Corporativo</label>
+                    <input type="text" class="form-control" id="nombreCo" name="txtnombreCo" value="{{ empresas.nombre_empresa }}">
+                </div>
+                
+                <div class="form-group mb-3">
+                    <label for="nombreC">Nombre Comercial</label>
+                    <input type="text" class="form-control" id="nombreC" name="txtnombreC" value="{{ empresas.nombre_comercial }}">
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="bolsa">Bolsa donde cotiza</label>
+                    <input type="text" class="form-control" id="bolsa" name="txtbolsa" value="{{ empresas.BolsaV }}">
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="simbolo">Símbolo</label>
+                    <input type="text" class="form-control" id="simbolo" name="txtsimbolo" value="{{ empresas.Simbolo }}">
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="tipo_empresa">Tipo de Empresa</label>
+                    <input type="text" class="form-control" id="tipo_empresa" name="txttipo" value="{{ empresas.tipo_empresa_idtipo_empresa }}">
+                </div>
+
+                <button type="submit" class="btn btn-success w-100">Guardar Cambios</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,100 @@
+{% include("encabezado7.html") %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eliminar cuenta - InvertInfo</title>
+    <style>
+        body {
+            display: flex; /* Usar flexbox */
+            flex-direction: column; /* Colocar elementos en columna */
+            background-image: url("{{ url_for('static', filename='images/fondo.jpg') }}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-attachment: fixed;
+            margin: 0;
+            padding-top: 70px; /* Para evitar que el contenido quede oculto por el encabezado fijo */
+        }
+
+        header {
+            position: fixed;
+            top: 0;
+            width: 50%;
+            z-index: 1000;
+            background-color: #fff; /* Fondo blanco */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+        }
+
+        .container {
+            margin-top: 150px; /* Espacio superior para no tapar contenido por el encabezado */
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8); /* Fondo con transparencia */
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 60%; /* Ancho del contenedor */
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .paragraph-container {
+            background-color: rgba(255, 255, 255, 0.9); /* Fondo blanco sólido para el cuadro */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: justify; /* Justificar texto */
+            margin-bottom: 20px;
+        }
+
+        .form-check {
+            margin-top: 20px;
+        }
+
+        .btn-danger {
+            width: 50%;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px;
+            font-size: 1.1rem;
+            border-radius: 5px;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+
+<body>
+    {% include("encabezado7.html") %}
+
+    <div class="container">
+        <h1>¿Deseas eliminar tu cuenta?</h1>
+
+        <!-- Contenedor del párrafo -->
+        <div class="paragraph-container">
+            <p><strong>Importante:</strong> Al eliminar tu cuenta, perderás todo tu historial de predicciones y no podrás realizar nuevas predicciones en el futuro. Esta acción es irreversible y eliminará permanentemente todos los datos asociados con tu cuenta.</p>
+        </div>
+
+        <form action="/eliminar_c" method="post">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="confirmacion" required>
+                <label class="form-check-label" for="confirmacion">
+                    He leído y entiendo las implicaciones de eliminar mi cuenta.
+                </label>
+            </div>
+            <div class="text-center mt-3">
+                <button type="submit" class="btn btn-danger">Eliminar Cuenta</button>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>
