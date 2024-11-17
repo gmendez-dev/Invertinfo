@@ -1,5 +1,3 @@
-{% include("encabezado7.html") %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,11 +25,7 @@
 </head>
 <body>
 
-    <head>
-
-        {% include("encabezado7.html") %}
-
-    </head>
+    {% include("encabezado7.html") %}
 
 <div class="container mt-5">
     {% if usuarios %}
@@ -51,8 +45,8 @@
                 <input type="email" class="form-control" id="correo" name="txtcorreo" value="{{ usuarios.correo }}" placeholder="Ingresa tu correo electrónico">
             </div>
             <div class="form-group">
-                <label for="Password">Contraseña</label>
-                <input type="password" class="form-control" id="Password" name="txtpassword" value="{{ usuarios.password }}" placeholder="Ingresa una contraseña nueva">
+                <label for="Password">Nueva Contraseña (deja en blanco si no deseas cambiarla)</label>
+                <input type="password" class="form-control" id="Password" name="txtpassword" placeholder="Ingresa una nueva contraseña si deseas cambiarla">
             </div>
             <div class="form-group">
                 <label for="Telefono">Teléfono</label>
@@ -67,12 +61,12 @@
                 <label for="prefencia">Tu preferencia actual es: {{ usuarios.Interes }}</label>
                 <select class="form-select" name="tipo_empresa">
                     <option selected disabled>-- Selecciona una opción --</option>
-                    <option value="Alimentos y bebidas">Alimentos y bebidas</option>
-                    <option value="Construccion e Infraestructura">Construcción e Infraestructura</option>
-                    <option value="Salud y limpieza">Salud y Limpieza</option>
-                    <option value="Financiera">Financiera</option>
-                    <option value="Telecomunicaciones">Telecomunicaciones</option>
-                    <option value="Entretenimiento">Entretenimiento</option>
+                    <option value="Alimentos y bebidas" {% if usuarios.Interes == "Alimentos y bebidas" %}selected{% endif %}>Alimentos y bebidas</option>
+                    <option value="Construccion e Infraestructura" {% if usuarios.Interes == "Construccion e Infraestructura" %}selected{% endif %}>Construcción e Infraestructura</option>
+                    <option value="Salud y limpieza" {% if usuarios.Interes == "Salud y limpieza" %}selected{% endif %}>Salud y Limpieza</option>
+                    <option value="Financiera" {% if usuarios.Interes == "Financiera" %}selected{% endif %}>Financiera</option>
+                    <option value="Telecomunicaciones" {% if usuarios.Interes == "Telecomunicaciones" %}selected{% endif %}>Telecomunicaciones</option>
+                    <option value="Entretenimiento" {% if usuarios.Interes == "Entretenimiento" %}selected{% endif %}>Entretenimiento</option>
                 </select>
             </div>
             <br>

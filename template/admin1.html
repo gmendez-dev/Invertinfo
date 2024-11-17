@@ -1,25 +1,22 @@
-{% include("encabezado4.html") %}
-
-
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <title>Inicio Admin - InvertInfo</title>
     <style>
         /* Estilo de fondo */
         body {
-          background-image: url("{{ url_for('static', filename='images/fondo.jpg') }}");
-          background-size: cover; 
-          background-repeat: no-repeat; 
-          background-position: center; 
-          background-attachment: fixed;
-          padding-top: 56px; /* Añade espacio para evitar que el contenido se superponga al encabezado */
+            background-image: url("{{ url_for('static', filename='images/fondo.jpg') }}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-attachment: fixed;
+            padding-top: 56px;
         }
 
-        /* Estilo para el mensaje de bienvenida */
         .welcome-message {
             background-color: white;
             padding: 30px;
@@ -27,18 +24,161 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
+
+        /* Estilo general para módulos */
+        .module {
+            background-color: white;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Contenedor de la gráfica para ocupar solo la mitad de la pantalla */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Contenedor de la tabla */
+        .table-container {
+            background-color: #333; /* Fondo negro */
+            color: #fff; /* Texto blanco */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        /* Estilo de la tabla */
+        .table-container table {
+            color: #fff;
+        }
     </style>
 </head>
 <body>
-
     {% include("encabezado4.html") %}
 
     <div class="container my-5">
         <div class="welcome-message">
             <h1>Bienvenido/a, {{ session['nombre_usuario'] }}!</h1>
-            <!-- Otros contenidos de la página -->
+        </div>
+        <br><br>
+
+        <!-- Preparación de los datos para JavaScript -->
+        <script>
+            // Convertir los datos de Jinja a variables de JavaScript en formato JSON seguro
+            const usuariosFechas = JSON.parse('{{ fechas | tojson | safe }}');
+            const usuariosTotales = JSON.parse('{{ totales | tojson | safe }}');
+            const empresasTipos = JSON.parse('{{ tipos_empresas | tojson | safe }}');
+            const empresasTotales = JSON.parse('{{ totales_empresas | tojson | safe }}');
+        </script>
+
+        <!-- Módulo: Registro de Usuarios por Fecha -->
+        <div class="module">
+            <h3>Registro de Usuarios por Fecha</h3>
+            {% if error_usuarios %}
+                <p>{{ error_usuarios }}</p>
+            {% else %}
+                <div class="chart-container">
+                    <canvas id="usuariosChart"></canvas>
+                </div>
+                <script>
+                    document.addEventListener("DOMContentLoaded", function() {
+                        const ctxUsuarios = document.getElementById('usuariosChart').getContext('2d');
+                        new Chart(ctxUsuarios, {
+                            type: 'bar',
+                            data: {
+                                labels: usuariosFechas,
+                                datasets: [{
+                                    label: 'Total de Usuarios',
+                                    data: usuariosTotales,
+                                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    x: { title: { display: true, text: 'Fechas' }},
+                                    y: { title: { display: true, text: 'Usuarios' }, beginAtZero: true }
+                                }
+                            }
+                        });
+                    });
+                </script>
+            {% endif %}
+        </div>
+
+        <!-- Fila con gráfica de empresas y tabla de tipos de empresas -->
+        <div class="row">
+            <!-- Columna para la gráfica de empresas -->
+            <div class="col-md-8">
+                <div class="module">
+                    <h3>Cantidad de Empresas por Tipo</h3>
+                    {% if error_empresas %}
+                        <p>{{ error_empresas }}</p>
+                    {% else %}
+                        <div class="chart-container">
+                            <canvas id="empresasChart"></canvas>
+                        </div>
+                        <script>
+                            document.addEventListener("DOMContentLoaded", function() {
+                                const ctxEmpresas = document.getElementById('empresasChart').getContext('2d');
+                                new Chart(ctxEmpresas, {
+                                    type: 'bar',
+                                    data: {
+                                        labels: empresasTipos,
+                                        datasets: [{
+                                            label: 'Total de Empresas',
+                                            data: empresasTotales,
+                                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                                            borderColor: 'rgba(75, 192, 192, 1)',
+                                            borderWidth: 1
+                                        }]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        scales: {
+                                            x: { title: { display: true, text: 'Tipos de Empresa' }},
+                                            y: { title: { display: true, text: 'Cantidad de Empresas' }, beginAtZero: true }
+                                        }
+                                    }
+                                });
+                            });
+                        </script>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Columna para la tabla de tipos de empresa -->
+            <div class="col-md-4">
+                <div class="table-container">
+                    <h2>Tipo de Empresas por ID</h2>
+                    <table class="table table-striped table-dark table-sm">
+                        <thead>
+                            <tr>
+                                <th scope="col">ID</th>
+                                <th scope="col">TIPO DE EMPRESA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><th scope="row">1</th><td>Alimentos y bebidas</td></tr>
+                            <tr><th scope="row">2</th><td>Construcción e Infraestructura</td></tr>
+                            <tr><th scope="row">3</th><td>Salud y Limpieza</td></tr>
+                            <tr><th scope="row">4</th><td>Telecomunicaciones</td></tr>
+                            <tr><th scope="row">5</th><td>Entretenimiento</td></tr>
+                            <tr><th scope="row">6</th><td>Financiero</td></tr>
+                            <tr><th scope="row">7</th><td>Otro</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
-
 </body>
 </html>

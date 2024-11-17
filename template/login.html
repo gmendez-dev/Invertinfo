@@ -1,5 +1,3 @@
-{% include("encabezado2.html") %}
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -9,29 +7,70 @@
     <title>Login - InvertInfo</title>
     <link rel="icon" href="/Login/static/images/INVERTINFO.png" type="image/png">
     <style>
-         body {
-          background-image: url("{{ url_for('static', filename='images/fondo.jpg') }}");
-          background-size: cover; 
-          background-repeat: no-repeat; 
-          background-position: center; 
-          background-attachment: fixed;
-      }
-      .container {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-      }
-      .form-container {
-          width: 100%;
-          max-width: 400px;
-          padding: 20px;
-      }
+        body {
+            background-image: url("{{ url_for('static', filename='images/fondo.jpg') }}");
+            background-size: cover; 
+            background-repeat: no-repeat; 
+            background-position: center; 
+            background-attachment: fixed;
+            padding-top: 80px; /* Espacio para el encabezado fijo */
+            margin: 0;
+        }
+        .container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .form-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            background-color: #0a3d62; /* Color original del encabezado */
+        }
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+        }
+        .navbar-brand img {
+            height: 30px;
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
+    <!-- Encabezado fijo -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <img src="{{ url_for('static', filename='images/invertinfo.png') }}" alt="Logo">
+                InvertInfo
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Inicio</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenedor del formulario de inicio de sesión -->
     <div class="container">
-        <div class="form-container bg-light rounded shadow">
+        <div class="form-container">
             <form class="form-control" action="acceso-login" method="post">
                 <h1 class="text-center">Iniciar sesión</h1>
                 {% if mensaje %}
@@ -46,16 +85,18 @@
                 {% endif %}
                 <div class="form-group">
                     <label for="correo">Correo</label>
-                    <input type="email" class="form-control" id="correo" aria-describedby="emailHelp" placeholder="Coloca tu Correo" name="txtcorreo">
+                    <input type="email" class="form-control" id="correo" placeholder="Coloca tu Correo" name="txtcorreo" required>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" class="form-control" id="password" placeholder="Coloca tu contraseña" name="txtpassword">
+                    <input type="password" class="form-control" id="password" placeholder="Coloca tu contraseña" name="txtpassword" required>
                 </div>
                 <br>
                 <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
             </form>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </body>
 </html>

@@ -8,6 +8,7 @@ from sklearn.svm import SVR
 from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime
 import bcrypt
+import plotly.graph_objects as go
 
 app = Flask(__name__,template_folder='template')
 prediccion_data = None
@@ -33,11 +34,39 @@ def index():
 
 @app.route('/admin1')
 def admin1():
-   return render_template('admin1.html')
+       # Obtener los datos para la gráfica de usuarios registrados por fecha
+    fechas, totales, error_usuarios = graficar_us_totales()
+
+    # Obtener los datos para la gráfica de empresas por tipo
+    data_empresas, error_empresas = mostrar_empresas_graf()
+
+    # Asignar valores predeterminados si alguna variable es None
+    fechas = fechas or []
+    totales = totales or []
+    tipos_empresas = data_empresas["tipos"] if data_empresas else []
+    totales_empresas = data_empresas["totales_empresas"] if data_empresas else []
+
+    return render_template("admin1.html", 
+                           fechas=fechas, 
+                           totales=totales, 
+                           tipos_empresas=tipos_empresas, 
+                           totales_empresas=totales_empresas,
+                           error_usuarios=error_usuarios,
+                           error_empresas=error_empresas)
 
 @app.route('/user1')
 def user1():
-   return render_template('user1.html')
+    # Obtener los datos de recomendaciones llamando a `graf_login`
+    nombres_empresas, cambios_proyeccion = graf_login()
+
+    # Asegurarse de que no sean `None`
+    nombres_empresas = nombres_empresas if nombres_empresas else []
+    cambios_proyeccion = cambios_proyeccion if cambios_proyeccion else []
+
+    # Renderiza `user1.html` con los datos para la gráfica
+    return render_template("user1.html", 
+                           nombres_empresas=nombres_empresas, 
+                           cambios_proyeccion=cambios_proyeccion)
 
 @app.route('/buscare')
 def buscare():
@@ -103,63 +132,185 @@ def BuscarE_usuario():
 def eliminar_cuenta():
    return render_template('eliminar_cuenta.html')
 
+@app.route('/graficar_us_totales')
+def graficar_us_totales():
+    try:
+        # Conexión y consulta a la base de datos
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            SELECT fecha_registro, COUNT(*) as total_usuarios
+            FROM usuario
+            GROUP BY fecha_registro
+            ORDER BY fecha_registro ASC;
+        """)
+        resultado = cur.fetchall()
+
+        print(f"Resultado de la consulta: {resultado}")  # Verifica qué datos recibes
+        
+        cur.close()
+
+        if not resultado:
+            # Si no hay resultados, manejar el error y retornar un mensaje
+            return [], [], "No se encontraron datos para graficar."
+
+        # Inicializar las listas para fechas y totales
+        fechas = []
+        totales = []
+
+        # Depuración: Verificar si las listas están vacías
+        print(f"Fechas antes del loop: {fechas}")
+        print(f"Totales antes del loop: {totales}")
+        
+        for row in resultado:
+            print(f"Procesando la fila: {row}")  # Ver qué contiene cada fila
+
+            # Acceder a las claves del diccionario
+            fecha = row['fecha_registro'].strftime('%Y-%m-%d')  # Asegurarse de que la fecha esté en el formato adecuado
+            totales.append(row['total_usuarios'])
+
+            # Añadir la fecha a la lista de fechas
+            fechas.append(fecha)
+
+        # Depuración: Verificar que las listas se llenen correctamente
+        print(f"Fechas después del loop: {fechas}")
+        print(f"Totales después del loop: {totales}")
+
+        # Retornar las fechas, totales y None (sin error)
+        return fechas, totales, None   
+
+    except Exception as e:
+        print(f"Error al procesar los datos: {str(e)}")  # Depurar el error
+        return [], [], f"Error al generar los datos: {str(e)}"
+
+def mostrar_empresas_graf():
+    try:
+        # Conexión a la base de datos y consulta de empresas por tipo
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            SELECT tipo_empresa_idtipo_empresa, COUNT(*) as total_empresas
+            FROM empresa
+            GROUP BY tipo_empresa_idtipo_empresa
+        """)
+        
+        # Almacenar los resultados en un diccionario
+        resultados = cur.fetchall()
+        cur.close()
+
+        # Crear un diccionario para almacenar los tipos y totales
+        data_empresas = {
+            "tipos": [],
+            "totales_empresas": []
+        }
+
+        # Procesar los resultados y añadirlos al diccionario
+        for row in resultados:
+            data_empresas["tipos"].append(f"Tipo {row['tipo_empresa_idtipo_empresa']}")
+            data_empresas["totales_empresas"].append(row['total_empresas'])
+
+        return data_empresas, None  # Devolver los datos y None como indicación de que no hubo error
+
+    except Exception as e:
+        return None, f"Error al obtener los datos de empresas: {str(e)}"
+
+
+def graf_login():
+    url = f"https://financialmodelingprep.com/api/v3/stock-screener?marketCapMoreThan=1000000000&volumeMoreThan=5000000&apikey={API_KEY}"
+    
+    try:
+        # Hacer la solicitud a la API
+        response = requests.get(url)
+        
+        # Verificar si la respuesta es exitosa y es JSON
+        if response.status_code == 200:
+            data = response.json()
+
+            # Asegurarse de que `data` es una lista de diccionarios
+            if isinstance(data, list) and all(isinstance(item, dict) for item in data):
+                # Filtrar las 5 empresas con mayor proyección
+                empresas_recomendadas = sorted(
+                    data, key=lambda x: x.get("change", 0), reverse=True
+                )[:5]
+
+                # Extraer nombres y cambios para la gráfica, con verificación de claves
+                nombres_empresas = [empresa.get("companyName", "Sin Nombre") for empresa in empresas_recomendadas]
+                cambios_proyeccion = [empresa.get("change", 0) for empresa in empresas_recomendadas]
+
+                # Imprimir para depuración
+                print("Empresas recomendadas:", nombres_empresas)
+                print("Cambios de proyección:", cambios_proyeccion)
+
+                # Devolver dos valores: nombres de empresas y cambios de proyección
+                return nombres_empresas, cambios_proyeccion
+            else:
+                print("La estructura de datos de la API no es la esperada.")
+                return [], []
+        else:
+            print(f"Error en la respuesta de la API: {response.status_code}")
+            return [], []
+
+    except Exception as e:
+        print(f"Error al obtener los datos de la API: {str(e)}")
+        return [], []
+
 @app.route('/editar_usuario', methods=['GET', 'POST'])
 def editar_usuario():
-    # Verificar si el usuario está logueado y si tiene un ID de usuario en la sesión
     if 'idusuario' not in session:
         flash("Por favor, inicia sesión para acceder a esta funcionalidad.", "error")
-        return redirect(url_for('home'))  # Redirigir a la página de inicio si no está logueado
-
-    # Verificar si el usuario tiene el rol adecuado (si tienes roles de usuario)
-    # Si el rol no es adecuado, redirigirlo a otra página o mostrar un mensaje
-    # Por ejemplo, si solo el usuario puede editar su propia cuenta
-    if session['idusuario'] != request.args.get('idusuario'):
-        flash("No tienes permiso para editar este perfil.", "error")
-        return redirect(url_for('home'))  # O redirigir a otra página de acceso autorizado
+        return redirect(url_for('home'))
 
     idusuario = session['idusuario']
+    
+    # Obtener los datos actuales del usuario
     cur = mysql.connection.cursor()
     cur.execute('SELECT * FROM usuario WHERE idusuario=%s', (idusuario,))
-    usuarios = cur.fetchone()
+    usuario = cur.fetchone()
     cur.close()
-    
-    # Verifica si el usuario existe
-    if not usuarios:
+
+    if not usuario:
         flash("No se encontraron datos del usuario.", "error")
         return redirect(url_for('home'))
 
     if request.method == 'POST':
-        # Obtener los datos del formulario
+        # Obtener los valores del formulario
         nombre = request.form['txtnombre']
         username = request.form['txtusername']
         correo = request.form['txtcorreo']
         password = request.form['txtpassword']  # Nueva contraseña (si se proporciona)
         telefono = request.form['txttelefono']
         direccion = request.form['txtdireccion']
-        tipo_empresa = request.form['tipo_empresa']
-        
-        # Si se ingresa una nueva contraseña, encriptarla con bcrypt
-        if password:
-            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-            password = hashed_password.decode('utf-8')  # Guardar la contraseña encriptada
-        else:
-            # Si no se ingresa una nueva contraseña, conservar la anterior
-            password = usuarios['password']
+        tipo_empresa = request.form['tipo_empresa'] if request.form['tipo_empresa'] else usuario['Interes']
 
-        # Actualizar la información del usuario en la base de datos
+        # Construir la consulta de actualización con o sin la contraseña según el caso
+        if password:
+            # Si se proporciona una nueva contraseña, encriptarla
+            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            query = """
+                UPDATE usuario 
+                SET nombre = %s, username = %s, correo = %s, password = %s, telefono = %s, Direccion = %s, Interes = %s
+                WHERE idusuario = %s
+            """
+            values = (nombre, username, correo, hashed_password, telefono, direccion, tipo_empresa, idusuario)
+        else:
+            # Si no se proporciona una nueva contraseña, no actualizar el campo de contraseña
+            query = """
+                UPDATE usuario 
+                SET nombre = %s, username = %s, correo = %s, telefono = %s, Direccion = %s, Interes = %s
+                WHERE idusuario = %s
+            """
+            values = (nombre, username, correo, telefono, direccion, tipo_empresa, idusuario)
+
+        # Ejecutar la consulta de actualización
         cur = mysql.connection.cursor()
-        cur.execute("""
-            UPDATE usuario 
-            SET nombre = %s, username = %s, correo = %s, password = %s, telefono = %s, Direccion = %s, Interes = %s
-            WHERE idusuario = %s
-        """, (nombre, username, correo, password, telefono, direccion, tipo_empresa, idusuario))
+        cur.execute(query, values)
         mysql.connection.commit()
         cur.close()
 
         flash("Datos actualizados correctamente.", "success")
         return redirect(url_for('editar_usuario'))
 
-    return render_template('editar_usuario.html', usuarios=usuarios)
+    # Renderizar el formulario con los datos actuales del usuario
+    return render_template('editar_usuario.html', usuarios=usuario)
+
 
 
 @app.route('/crud_empresas')
@@ -194,39 +345,40 @@ def edit_us():
 
     idusuario = session['idusuario']  # Obtener el ID del usuario desde la sesión
 
-    # Obtener los valores del formulario
-    nombre = request.form['txtnombre']
-    username = request.form['txtusername']
-    correo = request.form['txtcorreo']
-    password = request.form['txtpassword']
-    telefono = request.form['txttelefono']
-    direccion = request.form['txtdireccion']
-    tipo_empresa = request.form['tipo_empresa']
+    # Obtener los valores del formulario con .get para evitar errores si están vacíos
+    nombre = request.form.get('txtnombre', None)
+    username = request.form.get('txtusername', None)
+    correo = request.form.get('txtcorreo', None)
+    password = request.form.get('txtpassword', None)
+    telefono = request.form.get('txttelefono', None)
+    direccion = request.form.get('txtdireccion', None)
+    tipo_empresa = request.form.get('tipo_empresa', None)
 
     # Conectar a la base de datos
     cur = mysql.connection.cursor()
 
     # Verificar que el usuario que está editando los datos es el dueño de la cuenta
-    cur.execute("SELECT idusuario FROM usuario WHERE idusuario = %s", (idusuario,))
+    cur.execute("SELECT * FROM usuario WHERE idusuario = %s", (idusuario,))
     usuario_en_db = cur.fetchone()
 
     if not usuario_en_db:
         flash("No se encontraron datos del usuario. Acceso no autorizado.", "error")
         return redirect(url_for('home'))
 
-    # Obtener el interés actual del usuario
-    cur.execute("SELECT Interes FROM usuario WHERE idusuario = %s", (idusuario,))
-    interes_actual = cur.fetchone()
-    interes = tipo_empresa if tipo_empresa else interes_actual['Interes']  # Mantener el interés actual si no se envía uno nuevo
+    # Mantener valores actuales si no se han proporcionado nuevos datos en el formulario
+    nombre = nombre if nombre else usuario_en_db['nombre']
+    username = username if username else usuario_en_db['username']
+    correo = correo if correo else usuario_en_db['correo']
+    telefono = telefono if telefono else usuario_en_db['telefono']
+    direccion = direccion if direccion else usuario_en_db['Direccion']
+    interes = tipo_empresa if tipo_empresa else usuario_en_db['Interes']  # Mantener el interés actual si no se selecciona uno nuevo
 
-    # Si se ha ingresado una nueva contraseña, encriptarla
+    # Si se ha ingresado una nueva contraseña, encriptarla; si no, mantener la contraseña existente
     if password:
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         password = hashed_password.decode('utf-8')  # Guardar la contraseña encriptada
     else:
-        # Si no se ingresa una nueva contraseña, conservar la anterior
-        cur.execute("SELECT password FROM usuario WHERE idusuario = %s", (idusuario,))
-        password = cur.fetchone()['password']
+        password = usuario_en_db['password']
 
     # Actualizar los datos del usuario en la base de datos
     cur.execute("""
@@ -240,7 +392,7 @@ def edit_us():
     cur.close()
 
     flash("Datos actualizados correctamente.", "success")
-    return render_template('user1.html')
+    return redirect('user1')
 
 
 @app.route('/eliminar_c', methods=["GET", "POST"])
@@ -268,7 +420,7 @@ def eliminar_c():
 
     return redirect(url_for('home'))
 
-
+# Ruta de login
 @app.route('/acceso-login', methods=["GET", "POST"])
 def login():
     if request.method == 'POST' and 'txtcorreo' in request.form and 'txtpassword' in request.form:
@@ -281,11 +433,12 @@ def login():
         # Consultar el correo y la contraseña encriptada desde la base de datos
         cur.execute('SELECT idusuario, password, tipo_usuario_idtipo_usuario, nombre FROM usuario WHERE correo = %s', (_correo,))
         account = cur.fetchone()
+        cur.close()
 
         if account:
             # Recuperar la contraseña encriptada almacenada en la base de datos
             contraseña_encriptada = account['password']
-            
+
             # Verificar si la contraseña ingresada coincide con la encriptada
             if bcrypt.checkpw(_password.encode('utf-8'), contraseña_encriptada.encode('utf-8')):
                 # Si las contraseñas coinciden, almacenar información en la sesión
@@ -294,19 +447,34 @@ def login():
                 session['tipo_usuario_idtipo_usuario'] = account['tipo_usuario_idtipo_usuario']
                 session['nombre_usuario'] = account['nombre']
 
-                # Redirigir al tipo de usuario correspondiente
+                # Redireccionar según el tipo de usuario
                 if session['tipo_usuario_idtipo_usuario'] == 1:
-                    return render_template("admin1.html")
+                    # Cargar datos para la vista de administrador
+                    fechas, totales, error_usuarios = graficar_us_totales()
+                    data_empresas, error_empresas = mostrar_empresas_graf()
+
+                    return render_template("admin1.html",
+                                           fechas=fechas or [],
+                                           totales=totales or [],
+                                           tipos_empresas=data_empresas["tipos"] if data_empresas else [],
+                                           totales_empresas=data_empresas["totales_empresas"] if data_empresas else [],
+                                           error_usuarios=error_usuarios,
+                                           error_empresas=error_empresas)
                 elif session['tipo_usuario_idtipo_usuario'] == 2:
-                    return render_template("user1.html")
+                    # Cargar datos para la vista de usuario
+                    nombres_empresas, cambios_proyeccion = graf_login()
+                    return render_template("user1.html", nombres_empresas=nombres_empresas, cambios_proyeccion=cambios_proyeccion)
+
             else:
                 # Si las contraseñas no coinciden
-                return render_template('login.html', mensaje="Usuario y/o contraseña Incorrectos")
+                return render_template('login.html', mensaje="Contraseña Incorrecta")
         else:
             # Si el usuario no existe
-            return render_template('login.html', mensaje="Usuario y/o contraseña Incorrectos")
-    
+            return render_template('login.html', mensaje="No existe el usuario.")
+
     return render_template('login.html')
+
+
 
 #Funcion Registro
 @app.route('/crear-registro', methods=["GET", "POST"])
@@ -318,13 +486,23 @@ def crear_registro():
 
     # Si es un POST, procesamos los datos del formulario
     if request.method == "POST":
-        nombre = request.form['txtnombre']
-        usuario = request.form['txtusuario']
-        correo = request.form['txtcorreo']
-        password = request.form['txtpassword']
-        telefono = request.form['txttelefono']
-        direccion = request.form['txtdireccion']
-        preferencia = request.form['tipo_empresa']
+        nombre = request.form.get('txtnombre')
+        usuario = request.form.get('txtusuario')
+        correo = request.form.get('txtcorreo')
+        password = request.form.get('txtpassword')
+        telefono = request.form.get('txttelefono')
+        direccion = request.form.get('txtdireccion')
+        preferencia = request.form.get('tipo_empresa')
+
+        # Validación de campos vacíos
+        if not (nombre and usuario and correo and password and telefono and direccion and preferencia):
+            flash("Se deben llenar todos los campos para realizar el registro.", "danger")
+            return render_template('registro.html')
+
+        # Validación del formato del correo
+        if '@' not in correo or '.' not in correo:
+            flash("El correo ingresado no es válido.", "warning")
+            return render_template('registro.html')
 
         # Validación de usuario existente (correo o nombre de usuario)
         cur = mysql.connection.cursor()
@@ -332,8 +510,8 @@ def crear_registro():
         usuario_existente = cur.fetchone()
 
         if usuario_existente:
-            flash("El correo o el nombre de usuario ya está registrado. Por favor, elige otro.", "error")
-            return render_template('crear_registro.html')
+            flash("El correo o el nombre de usuario ya está registrado. Por favor, elige otro.", "danger")
+            return render_template('registro.html')
 
         # Encriptar la contraseña con bcrypt
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
@@ -349,7 +527,8 @@ def crear_registro():
         flash("Usuario creado correctamente. Por favor, inicia sesión.", "success")
         return redirect(url_for('login'))
 
-    return render_template('crear_registro.html')
+    return render_template('registro.html')
+
 
 #Funcion registro empresa
 @app.route('/agregar_empresas', methods=["GET", "POST"])
@@ -389,7 +568,6 @@ def agregar_empresas():
 
     return render_template('agregar_empresas.html')
 
-
 #Funcion Registro_administrador
 @app.route('/crear-registro-admin', methods=["GET","POST"])
 def crear_registro_admin():
@@ -406,12 +584,11 @@ def crear_registro_admin():
     direccion=request.form['txtdireccion']
     preferencia=request.form['tipo_empresa']
 
-
     cur = mysql.connection.cursor()
     cur.execute("INSERT INTO usuario (nombre, username, correo, password, fecha_registro, tipo_usuario_idtipo_usuario,telefono, Direccion, Interes) VALUES (%s,%s,%s,%s,NOW(),'1',%s,%s,%s)" ,(nombre,usuario,correo,password,telefono,direccion,preferencia))
     mysql.connection.commit()
 
-    return render_template('admin1.html', mensaje2="Usuario Administrador creado correctamente")
+    return redirect('admin1.html', mensaje2="Usuario Administrador creado correctamente")
 
 #listar Usuario (Para usuario administrador)
 @app.route('/listar', methods=["GET","POST"])
@@ -561,28 +738,36 @@ def ambos(idusuario):
 
     return render_template('historial.html', proy=proy, pre=pre)
 
-@app.route('/proyeccion_us', methods=['GET','POST'])
+@app.route('/proyeccion_us', methods=['GET', 'POST'])
 def proyeccion_us():
-
     if 'idusuario' not in session:
         flash("Por favor, inicia sesión para acceder a esta funcionalidad.", "error")
         return redirect(url_for('home'))
     
-    nombre = request.form['txtnombre']
-    cantidad = request.form['txtcantidad']
-    anios = request.form['txtanios']
-    tipo = request.form['tipo_empresa']
+    # Obtener los datos del formulario
+    nombre = request.form.get('txtnombre')
+    cantidad = request.form.get('txtcantidad')
+    anios = request.form.get('txtanios')
+    tipo = request.form.get('tipo_empresa')
 
+    # Validación de campos vacíos
+    if not nombre or not cantidad or not anios or not tipo:
+        flash("Se deben llenar todos los campos para poder realizar la proyección.", "danger")
+        return redirect(url_for('proyeccion_usuario'))  # Redirige al formulario con el mensaje de error
+
+    # Selección de función de proyección según el tipo de empresa
     if tipo == 'Empresas_nacionales':
         return proyectar_nacionales1(nombre)
     elif tipo == 'Otras_empresas':
         return proyectar_otras1(nombre, anios, cantidad)
     else:
-        return "Tipo de empresa no reconocido"
+        flash("Tipo de empresa no reconocido", "warning")
+        return redirect(url_for('proyeccion_usuario'))
+
 
 def proyectar_nacionales1(nombre):
     if 'idusuario' not in session:
-        flash("Por favor, inicia sesión para acceder a esta funcionalidad.", "error")
+        flash("Por favor, inicia sesión para acceder a esta funcionalidad.", "danger")
         return redirect(url_for('home'))
     
     cur = mysql.connection.cursor()
@@ -591,16 +776,16 @@ def proyectar_nacionales1(nombre):
     cur.close()
     
     if empresa:
-        flash("La empresa que seleccionaste es nacional, con estas empresas no se puede realizar una proyección ya que no se tienen acciones, son bonos y unicamente cotizan en la Bolsa de Valores Nacional adicional el Valor del bono es fijo de Q.10,000.00, pero para poder adquirir dichos bonos se debe gestionar con un corredor registrado en BVN y estos tienen comisiones individuales por gestion las cuales son dificiles y complejas de calcular.", "Warning")
+        flash("La empresa que seleccionaste es nacional, con estas empresas no se puede realizar una proyección ya que no se tienen acciones, son bonos y unicamente cotizan en la Bolsa de Valores Nacional adicional el Valor del bono es fijo de Q.10,000.00, pero para poder adquirir dichos bonos se debe gestionar con un corredor registrado en BVN y estos tienen comisiones individuales por gestion las cuales son dificiles y complejas de calcular.", "warning")
     else:
-        flash("Empresa no encontrada", "error")
+        flash("Empresa no encontrada", "danger")
     
     return render_template('proyeccion_usuario.html')
 
 def proyectar_otras1(nombre, anios, cantidad):
 
     if 'idusuario' not in session:
-        flash("Por favor, inicia sesión para acceder a esta funcionalidad.", "error")
+        flash("Por favor, inicia sesión para acceder a esta funcionalidad.", "danger")
         return redirect(url_for('home'))
 
     global proyeccion_data
@@ -610,18 +795,18 @@ def proyectar_otras1(nombre, anios, cantidad):
             anios = int(anios)
             cantidad = int(cantidad)
         except ValueError:
-            return render_template('proyeccion_usuario.html', mensaje="Los valores de años y cantidad deben ser números enteros")
+            return render_template('proyeccion_usuario.html', flash("Los valores de años y cantidad deben ser números enteros", "danger"))
 
         # Realizar la consulta al API de FMP para obtener los datos de la empresa
         url = f'https://financialmodelingprep.com/api/v3/quote/{nombre}?apikey={API_KEY}'
         response = requests.get(url)
 
         if response.status_code != 200:
-            return render_template('proyeccion_usuario.html', mensaje="Error en la consulta a la API para la empresa")
+            return render_template('proyeccion_usuario.html', flash("Error en la consulta a la API para la empresa", "danger"))
 
         data = response.json()
         if not data or 'symbol' not in data[0]:
-            return render_template('proyeccion_usuario.html', mensaje="No se encontraron resultados para esta empresa")
+            return render_template('proyeccion_usuario.html', flash("No se encontraron resultados para esta empresa", "danger"))
 
         empresa = data[0]
         simbolo = empresa['symbol']
@@ -632,11 +817,11 @@ def proyectar_otras1(nombre, anios, cantidad):
         response_dividendos = requests.get(url_dividendos)
 
         if response_dividendos.status_code != 200:
-            return render_template('proyeccion_usuario.html', mensaje="Error al obtener los dividendos de la empresa")
+            return render_template('proyeccion_usuario.html', flash("Error al obtener los dividendos de la empresa", "warning"))
 
         data_dividendos = response_dividendos.json()
         if 'historical' not in data_dividendos:
-            return render_template('proyeccion_usuario.html', mensaje="No se encontraron datos de dividendos para esta empresa")
+            return render_template('proyeccion_usuario.html', flash("No se encontraron datos de dividendos para esta empresa", "danger"))
 
         # Calcular el promedio de dividendos y crecimiento, con ajuste para proyecciones de 1 año
         dividendos = data_dividendos['historical']
@@ -675,23 +860,35 @@ def proyectar_otras1(nombre, anios, cantidad):
 
     return redirect('proyeccion_usuario')
 
-@app.route('/proyeccion_empresas', methods=['GET','POST'])
+@app.route('/proyeccion_empresas', methods=['GET', 'POST'])
 def proyeccion_empresa():
-    nombre = request.form['txtnombre']
-    cantidad = request.form['txtcantidad']
-    anios = request.form['txtanios']
-    tipo = request.form['tipo_empresa']
+    if 'idusuario' not in session:
+        flash("Por favor, inicia sesión para acceder a esta funcionalidad.", "error")
+        return redirect(url_for('home'))
+    
+    # Obtener los datos del formulario
+    nombre = request.form.get('txtnombre')
+    cantidad = request.form.get('txtcantidad')
+    anios = request.form.get('txtanios')
+    tipo = request.form.get('tipo_empresa')
 
+    # Validación de campos vacíos
+    if not nombre or not cantidad or not anios or not tipo:
+        flash("Se deben llenar todos los campos para poder realizar la proyección.", "danger")
+        return render_template('proyeccion.html')  # Renderiza directamente a proyeccion.html con el mensaje de error
+
+    # Selección de función de proyección según el tipo de empresa
     if tipo == 'Empresas_nacionales':
         return proyectar_nacionales(nombre)
     elif tipo == 'Otras_empresas':
         return proyectar_otras(nombre, anios, cantidad)
     else:
-        return "Tipo de empresa no reconocido"
+        flash("Tipo de empresa no reconocido", "warning")
+        return render_template('proyeccion.html')
 
 def proyectar_nacionales(nombre):
     if 'idusuario' not in session:
-        flash("Por favor, inicia sesión para acceder a esta funcionalidad.", "error")
+        flash("Por favor, inicia sesión para acceder a esta funcionalidad.", "danger")
         return redirect(url_for('home'))
     
     cur = mysql.connection.cursor()
@@ -700,85 +897,86 @@ def proyectar_nacionales(nombre):
     cur.close()
     
     if empresa:
-        flash("La empresa que seleccionaste es nacional, con estas empresas no se puede realizar una proyección ya que no se tienen acciones, son bonos y unicamente cotizan en la Bolsa de Valores Nacional adicional el Valor del bono es fijo de Q.10,000.00, pero para poder adquirir dichos bonos se debe gestionar con un corredor registrado en BVN y estos tienen comisiones individuales por gestion las cuales son dificiles y complejas de calcular.", "Warning")
+        flash("La empresa que seleccionaste es nacional. No se puede realizar una proyección ya que no se tienen acciones, solo bonos con valor fijo de Q.10,000.00. lo que hace muy dificil el calculo de los dividendos.", "warning")
     else:
-        flash("Empresa no encontrada", "error")
+        flash("Empresa no encontrada", "danger")
 
     return render_template('proyeccion.html')
 
 def proyectar_otras(nombre, anios, cantidad):
-
     global proyeccion_data
 
-    if request.method == 'POST':
-        try:
-            anios = int(anios)
-            cantidad = int(cantidad)
-        except ValueError:
-            return render_template('proyeccion.html', mensaje="Los valores de años y cantidad deben ser números enteros")
+    try:
+        anios = int(anios)
+        cantidad = int(cantidad)
+    except ValueError:
+        flash("Los valores de años y cantidad deben ser números enteros.", "danger")
+        return render_template('proyeccion.html')
 
-        # Realizar la consulta al API de FMP para obtener los datos de la empresa
-        url = f'https://financialmodelingprep.com/api/v3/quote/{nombre}?apikey={API_KEY}'
-        response = requests.get(url)
+    # Realizar la consulta al API de FMP para obtener los datos de la empresa
+    url = f'https://financialmodelingprep.com/api/v3/quote/{nombre}?apikey={API_KEY}'
+    response = requests.get(url)
 
-        if response.status_code != 200:
-            return render_template('proyeccion.html', mensaje="Error en la consulta a la API para la empresa")
+    if response.status_code != 200:
+        flash("Error en la consulta a la API para la empresa.", "danger")
+        return render_template('proyeccion.html')
 
-        data = response.json()
-        if not data or 'symbol' not in data[0]:
-            return render_template('proyeccion.html', mensaje="No se encontraron resultados para esta empresa")
+    data = response.json()
+    if not data or 'symbol' not in data[0]:
+        flash("No se encontraron resultados para esta empresa.", "danger")
+        return render_template('proyeccion.html')
 
-        empresa = data[0]
-        simbolo = empresa['symbol']
-        nombre_empresa = empresa['name']
+    empresa = data[0]
+    simbolo = empresa['symbol']
+    nombre_empresa = empresa['name']
 
-        # Obtener los dividendos históricos de la empresa
-        url_dividendos = f'https://financialmodelingprep.com/api/v3/historical-price-full/stock_dividend/{simbolo}?apikey={API_KEY}'
-        response_dividendos = requests.get(url_dividendos)
+    # Obtener los dividendos históricos de la empresa
+    url_dividendos = f'https://financialmodelingprep.com/api/v3/historical-price-full/stock_dividend/{simbolo}?apikey={API_KEY}'
+    response_dividendos = requests.get(url_dividendos)
 
-        if response_dividendos.status_code != 200:
-            return render_template('proyeccion.html', mensaje="Error al obtener los dividendos de la empresa")
+    if response_dividendos.status_code != 200:
+        flash("Error al obtener los dividendos de la empresa.", "danger")
+        return render_template('proyeccion.html')
 
-        data_dividendos = response_dividendos.json()
-        if 'historical' not in data_dividendos:
-            return render_template('proyeccion.html', mensaje="No se encontraron datos de dividendos para esta empresa")
+    data_dividendos = response_dividendos.json()
+    if 'historical' not in data_dividendos:
+        flash("No se encontraron datos de dividendos para esta empresa.", "danger")
+        return render_template('proyeccion.html')
 
-        # Calcular el promedio de dividendos y crecimiento, con ajuste para proyecciones de 1 año
-        dividendos = data_dividendos['historical']
-        total_dividendos = 0
-        crecimiento_dividendo = 0
+    # Calcular el promedio de dividendos y crecimiento, con ajuste para proyecciones de 1 año
+    dividendos = data_dividendos['historical']
+    total_dividendos = 0
+    crecimiento_dividendo = 0
 
-        # Calcular promedio y crecimiento solo si es más de 1 año
-        if anios > 1:
-            for i in range(1, min(anios, len(dividendos))):
-                dividendo_actual = dividendos[i]['dividend']
-                dividendo_anterior = dividendos[i-1]['dividend']
-                crecimiento_dividendo += (dividendo_actual / dividendo_anterior) - 1
-                total_dividendos += dividendo_actual
-            promedio_dividendo = total_dividendos / min(anios, len(dividendos))
-            tasa_crecimiento_promedio = crecimiento_dividendo / max(1, (len(dividendos) - 1))
-        else:
-            # Para un año, tomar el último dividendo conocido
-            promedio_dividendo = dividendos[0]['dividend'] if dividendos else 0
-            tasa_crecimiento_promedio = 0
+    # Calcular promedio y crecimiento solo si es más de 1 año
+    if anios > 1:
+        for i in range(1, min(anios, len(dividendos))):
+            dividendo_actual = dividendos[i]['dividend']
+            dividendo_anterior = dividendos[i-1]['dividend']
+            crecimiento_dividendo += (dividendo_actual / dividendo_anterior) - 1
+            total_dividendos += dividendo_actual
+        promedio_dividendo = total_dividendos / min(anios, len(dividendos))
+        tasa_crecimiento_promedio = crecimiento_dividendo / max(1, (len(dividendos) - 1))
+    else:
+        # Para un año, tomar el último dividendo conocido
+        promedio_dividendo = dividendos[0]['dividend'] if dividendos else 0
+        tasa_crecimiento_promedio = 0
 
-        # Proyectar utilidad con ajuste para un solo año sin crecimiento
-        utilidad_proyectada = 0
-        for año in range(anios):
-            utilidad_proyectada += promedio_dividendo * (1 + tasa_crecimiento_promedio) ** año * cantidad
+    # Proyectar utilidad con ajuste para un solo año sin crecimiento
+    utilidad_proyectada = 0
+    for año in range(anios):
+        utilidad_proyectada += promedio_dividendo * (1 + tasa_crecimiento_promedio) ** año * cantidad
 
-        proyeccion_data = {
-            'fecha': datetime.now().strftime('%Y-%m-%d'),
-            'nombre_empresa': nombre_empresa,
-            'cantidad_inversion': cantidad,
-            'plazo': anios,
-            'utilidad': round(utilidad_proyectada, 2),
-            'id_usuario': session['idusuario']
-        }
+    proyeccion_data = {
+        'fecha': datetime.now().strftime('%Y-%m-%d'),
+        'nombre_empresa': nombre_empresa,
+        'cantidad_inversion': cantidad,
+        'plazo': anios,
+        'utilidad': round(utilidad_proyectada, 2),
+        'id_usuario': session['idusuario']
+    }
 
-        return render_template('proyeccion.html', pro=proyeccion_data)
-
-    return render_template('proyeccion.html')
+    return render_template('proyeccion.html', pro=proyeccion_data)
 
 @app.route('/guardar_proyeccion', methods=['POST'])
 def guardar_proyeccion():
@@ -817,18 +1015,24 @@ def guardar_proyeccion():
         return redirect(url_for('proyeccion'))
 
 
-@app.route('/buscar_empresa', methods=['GET','POST'])
+@app.route('/buscar_empresa', methods=['GET', 'POST'])
 def buscar_empresa():
-    nombre = request.form['txtnombre']
-    tipo = request.form['tipo_empresa']
+    nombre = request.form.get('txtnombre')
+    tipo = request.form.get('tipo_empresa')
 
+    # Validación para verificar que los campos no estén vacíos
+    if not nombre or not tipo:
+        flash("El campo de nombre y el tipo de empresa son obligatorios.", "danger")
+        return redirect(url_for('buscare'))  # Asegúrate de que 'buscar_empresa' es el nombre de la ruta correcta para el formulario
 
+    # Selección de función de búsqueda según el tipo de empresa
     if tipo == 'Empresas_nacionales':
         return buscar_nacionales(nombre)
     elif tipo == 'Empresas_PEG':
         return buscar_PEG(nombre)
     else:
-        return "Tipo de empresa no reconocido"
+        flash("Tipo de empresa no reconocido", "warning")
+        return redirect(url_for('buscare'))
 
 def buscar_nacionales(nombre):
     cur =  mysql.connection.cursor()
@@ -847,38 +1051,42 @@ def buscar_PEG(nombre):
     if response.status_code == 200:
         data = response.json()
         print("Datos recibidos del API:", data)  # Verifica los datos recibidos
+
         if data:
-            empresa = data[0]
-            empre = [{
-                'nombre_comercial': empresa['name'],
-                'BolsaV': empresa['exchangeShortName'],
-                'Simbolo': empresa['symbol'],
-            }]
+            empre = [
+                {
+                    'nombre_comercial': empresa['name'],
+                    'BolsaV': empresa['exchangeShortName'],
+                    'Simbolo': empresa['symbol']
+                }
+                for empresa in data
+            ]
             return render_template('buscarE.html', empre=empre)
         else:
             print("No se encontraron empresas con ese nombre en el API.")  # Mensaje de datos vacíos
             return render_template('buscarE.html', empre=None)
     else:
         return "Error al conectar con el API de FinancialModelingPrep", 500
-    
 
-@app.route('/buscar_empresa1', methods=['GET','POST'])
+
+@app.route('/buscar_empresa1', methods=['GET', 'POST'])
 def buscar_empresa1():
+    nombre = request.form.get('txtnombre')
+    tipo = request.form.get('tipo_empresa')
 
-    if 'idusuario' not in session:
-        flash("Por favor, inicia sesión para acceder a esta funcionalidad.", "error")
-        return redirect(url_for('home'))
+    # Validación para verificar que los campos no estén vacíos
+    if not nombre or not tipo:
+        flash("El campo de nombre y el tipo de empresa son obligatorios.", "danger")
+        return redirect(url_for('BuscarE_usuario'))  # Asegúrate de que 'buscar_empresa' es el nombre de la ruta correcta para el formulario
 
-    nombre = request.form['txtnombre']
-    tipo = request.form['tipo_empresa']
-
-
+    # Selección de función de búsqueda según el tipo de empresa
     if tipo == 'Empresas_nacionales':
         return buscar_nacionales1(nombre)
     elif tipo == 'Empresas_PEG':
         return buscar_PEG1(nombre)
     else:
-        return "Tipo de empresa no reconocido"
+        flash("Tipo de empresa no reconocido", "warning")
+        return redirect(url_for('BuscarE_usuario'))
 
 def buscar_nacionales1(nombre):
 
@@ -895,10 +1103,6 @@ def buscar_nacionales1(nombre):
 
 def buscar_PEG1(nombre):
 
-    if 'idusuario' not in session:
-        flash("Por favor, inicia sesión para acceder a esta funcionalidad.", "error")
-        return redirect(url_for('home'))
-
     url = f"https://financialmodelingprep.com/api/v3/search?query={nombre}&apikey={API_KEY}"
     response = requests.get(url)
 
@@ -907,19 +1111,23 @@ def buscar_PEG1(nombre):
     if response.status_code == 200:
         data = response.json()
         print("Datos recibidos del API:", data)  # Verifica los datos recibidos
+
         if data:
-            empresa = data[0]
-            empre = [{
-                'nombre_comercial': empresa['name'],
-                'BolsaV': empresa['exchangeShortName'],
-                'Simbolo': empresa['symbol'],
-            }]
+            empre = [
+                {
+                    'nombre_comercial': empresa['name'],
+                    'BolsaV': empresa['exchangeShortName'],
+                    'Simbolo': empresa['symbol']
+                }
+                for empresa in data
+            ]
             return render_template('buscarE_usuario.html', empre=empre)
         else:
             print("No se encontraron empresas con ese nombre en el API.")  # Mensaje de datos vacíos
             return render_template('buscarE_usuario.html', empre=None)
     else:
         return "Error al conectar con el API de FinancialModelingPrep", 500
+
 
 @app.route('/listar_Tempresas')
 def listar_Tempresas():
@@ -1002,7 +1210,6 @@ def listar_Tempresas1():
         print(f"Error al conectarse a la API: {e}")
         return "Error al obtener los datos de la API. Intente de nuevo más tarde."
 
-
 @app.route('/realizar_prediccion', methods=['POST'])
 def realizar_prediccion():
     global prediccion_data  # Utilizamos la variable global
@@ -1049,6 +1256,7 @@ def realizar_prediccion():
         y = df['close'].values
         modelo = SVR(kernel='linear')
         modelo.fit(x, y)
+        
         # Predicción del valor futuro (siguiente día)
         valor_predicho = modelo.predict(np.array([[len(df)]]))[0]
 
@@ -1062,15 +1270,15 @@ def realizar_prediccion():
         diferencia = round(diferencia, 2)
         valor_real = round(valor_real, 2)
 
-        # Almacenando los datos de predicción en la variable global
-        prediccion_data = {
+        # Almacenando los datos de predicción en la variable global como lista de diccionarios
+        prediccion_data = [{
             'fecha': datetime.now().strftime('%Y-%m-%d'),
             'valor_predicho': valor_predicho,
             'valor_real': valor_real,
             'diferencia': diferencia,
             'nombre_empresa': nombre_empresa,
             'id_usuario': session['idusuario']
-        }
+        }]
 
         flash("Predicción realizada exitosamente.", "success")
         return render_template('prediccion.html', datas=prediccion_data)
@@ -1082,22 +1290,32 @@ def realizar_prediccion():
 
     return redirect(url_for('prediccion'))
 
+
 @app.route('/guardar_prediccion', methods=['POST'])
 def guardar_prediccion():
     if 'idusuario' not in session:
         return redirect(url_for('home'))
     
+    # Verifica si hay datos de predicción
     if not prediccion_data:
-        flash("No hay datos en la prediccion para guardar.", "danger")
+        flash("No hay datos en la predicción para guardar.", "danger")
+        return redirect(url_for('prediccion'))
 
-    # Guardar la predicción en la base de datos
+    # Extrae el primer elemento de prediccion_data, asumiendo que solo hay uno
+    prediccion = prediccion_data[0]
+
+    # Guarda la predicción en la base de datos
     cursor = mysql.connection.cursor()
-    cursor.execute("INSERT INTO prediccion (fecha, valor_predicho, valor_real, dif_por, usuario_idusuario, nombre_empresa) VALUES (%s, %s, %s, %s, %s, %s)", 
-                   (prediccion_data['fecha'], prediccion_data['valor_predicho'], prediccion_data['valor_real'], prediccion_data['diferencia'], prediccion_data['id_usuario'], prediccion_data['nombre_empresa']))
+    cursor.execute("""
+        INSERT INTO prediccion (fecha, valor_predicho, valor_real, dif_por, usuario_idusuario, nombre_empresa) 
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (prediccion['fecha'], prediccion['valor_predicho'], prediccion['valor_real'], prediccion['diferencia'], prediccion['id_usuario'], prediccion['nombre_empresa']))
     mysql.connection.commit()
     cursor.close()
-    flash("Prediccion guardada con Exito.", "success")
+    
+    flash("Predicción guardada con éxito.", "success")
     return redirect(url_for('prediccion'))
+
 
 
 if __name__ == '__main__':

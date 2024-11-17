@@ -1,5 +1,3 @@
-{% include("encabezado2.html") %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,10 +24,31 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             width: 100%;
         }
+        .container {
+            margin-top: 80px;
+        }
     </style>
 </head>
 <body>
-    <div class="container mt-5">
+    {% include("encabezado2.html") %}
+
+    <div class="container">
+        <!-- Mostrar mensajes flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show mt-2" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endwith %}
+
         <div class="row">
             <div class="col-md-4">
                 <div class="search-box">
@@ -67,7 +86,6 @@
                                     <th>Nombre de la Empresa</th>
                                     <th>Bolsa</th>
                                     <th>Simbolo</th>
-                                    <th>Tipo de Empresa</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -76,7 +94,6 @@
                                     <td>{{ e.nombre_comercial }}</td>
                                     <td>{{ e.BolsaV }}</td>
                                     <td>{{ e.Simbolo }}</td>
-                                    <td>{{ e.tipo_empresa_idtipo_empresa }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -88,5 +105,18 @@
             </div>
         </div>
     </div>
+
+    <!-- Script para cerrar las alertas automáticamente después de 5 segundos -->
+    <script>
+        setTimeout(function() {
+            let alertElement = document.querySelector('.alert');
+            if (alertElement) {
+                alertElement.classList.remove('show');
+                alertElement.classList.add('fade');
+            }
+        }, 5000);  // Tiempo en milisegundos (5 segundos)
+    </script>
 </body>
 </html>
+
+

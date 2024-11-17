@@ -1,102 +1,178 @@
-{% include("encabezado2.html") %}
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>¿Quiénes somos? - InvertInfo</title>
-    
+
     <!-- Ícono de la pestaña -->
     <link rel="icon" href="{{ url_for('static', filename='images/invertinfo.png') }}" type="image/x-icon">
 
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXhW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-        .header {
-            background-color: #0a3d62; /* Azul oscuro */
-            color: #ffffff;
-        }
-        
-        footer {
-            background-color: #2b2e31;
-            color: #ffffff;
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
         }
 
         body {
+            display: flex;
+            flex-direction: row;
             background-image: url("{{ url_for('static', filename='images/fondo.jpg') }}");
             background-size: cover;
             background-repeat: no-repeat;
             background-position: center;
             background-attachment: fixed;
-            margin: 0;
+            padding-top: 70px;
+            padding-bottom: 300px;
         }
 
-        .bg-white-paragraph, .bg-white-title {
-            background-color: #ffffff;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            margin-top: 10px;
-            text-align: left;
+        /* Barra lateral */
+        .sidebar {
+            width: 250px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background-color: #343a40;
+            color: white;
+            padding-top: 50px;
+            padding-left: 20px;
         }
 
-        .bg-white-title {
-            display: inline-block;
+        .sidebar h2 {
+            color: white;
+            cursor: pointer;
+            padding: 10px;
+        }
+
+        .sidebar h2:hover {
+            color: #007bff;
+        }
+
+        .sidebar img {
+            width: 100px;
+            margin-top: 20px;
+        }
+
+        /* Contenedor de contenido */
+        .content {
+            margin-left: 260px;
+            padding: 20px;
+            width: calc(100% - 260px);
+        }
+
+        /* Módulos ocultos */
+        .module {
+            display: none;
+            background-color: rgba(255, 255, 255, 0.85);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Estilo para los módulos cuando se muestran */
+        .module.show {
+            display: block;
+        }
+
+        /* Footer fijo */
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #343a40;
+            color: white;
+            text-align: center;
+            padding: 0.5rem;
+            z-index: 10;
         }
     </style>
 </head>
 <body>
-    <!-- Encabezado -->
-    <header class="header text-center py-5">
-        <h1 class=" ">¿Quiénes somos?</h1>
+
+    <header>
+
+        {% include("encabezado2.html") %}
+
     </header>
 
-    <!-- Contenido principal -->
-    <div class="container my-5">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <!-- Imagen del logo -->
-                <div class="text-center mb-4">
-                    <img src="{{ url_for('static', filename='images/invertinfo.png') }}" alt="Logo InvertInfo" class="img-fluid" style="max-width: 150px;">
-                </div>
 
-                <!-- Descripción del proyecto -->
-                <section class="text-center">
-                    <p class="lead text-primary-custom bg-white-paragraph">InvertInfo es un proyecto que nace de un estudiante de ingeniería en sistemas con el objetivo de crear una plataforma confiable y accesible que fomente el interés en inversiones dentro del mercado local. Nuestro propósito es educar, informar y motivar a las personas a conocer más sobre las empresas nacionales o con presencia en el país, ayudando a construir un ecosistema financiero más inclusivo y próspero. Creemos que con la información adecuada, cualquier persona puede tomar decisiones informadas y seguras sobre su futuro financiero.</p>
-                </section>
+<div class="sidebar">
+    <h2 id="quienesSomosTitle">¿Quiénes somos?</h2>
+    <h2 id="misionTitle">Nuestra misión</h2>
+    <h2 id="visionTitle">Nuestra visión</h2>
+    <h2 id="valoresTitle">Nuestros valores</h2>
+    <div style="text-align: center; margin-top: 150px;">
+        <!-- Logo al final de la barra lateral -->
+        <img src="{{ url_for('static', filename='images/invertinfo.png') }}" alt="InvertInfo Logo" style="width: 150px;">
+    </div>
+</div>
 
-                <!-- Misión y Visión en un solo artículo alineado a la izquierda -->
-                <article class="bg-white-paragraph mt-5">
-                    <h2 class="text-primary-custom bg-white-title">Nuestra misión</h2>
-                    <p>En InvertInfo, nuestra misión es conectar a las personas con oportunidades de inversión en el mercado local. Sabemos que muchas personas desean invertir pero no tienen acceso a información confiable y organizada. Por eso, creamos una plataforma que destaca las empresas nacionales y aquellas con presencia en nuestro país, facilitando el acceso a datos y análisis de manera accesible y amigable.</p>
-
-                    <h2 class="text-primary-custom bg-white-title mt-4">Nuestra visión</h2>
-                    <p>Nuestra visión es convertirnos en la principal fuente de información sobre inversiones en empresas locales y extranjeras con operaciones en el país, impulsando una cultura de inversión informada y responsable. Nos proyectamos como un referente en educación financiera que ayude a nuestros usuarios a mejorar sus finanzas personales y a tomar decisiones que contribuyan al crecimiento económico del país.</p>
-                </article>
-
-                <!-- Valores -->
-                <section class="mt-4">
-                    <h2 class="text-primary-custom bg-white-title">Nuestros valores</h2>
-                    <ul class="list-unstyled bg-white-paragraph">
-                        <li><strong>Transparencia:</strong> Nos comprometemos a ofrecer datos reales y verificados para tomar decisiones de inversión informadas.</li>
-                        <li><strong>Accesibilidad:</strong> Diseñamos una plataforma intuitiva para cualquier persona interesada en el mundo de las inversiones.</li>
-                        <li><strong>Educación:</strong> Creemos que la educación financiera es fundamental, y estamos aquí para brindar recursos y apoyo en ese camino.</li>
-                    </ul>
-                </section>
-
-                <!-- Botón para aprender más -->
-                <div class="text-center mt-5">
-                    <a href="/learn_more" class="btn btn-primary btn-lg">Aprende más sobre InvertInfo</a>
-                </div>
-            </div>
-        </div>
+<div class="content">
+    <!-- Módulo ¿Quiénes somos? -->
+    <div id="quienesSomosModule" class="module">
+        <h1>¿Quiénes somos?</h1>
+        <p>InvertInfo es un proyecto que nace de un estudiante de ingeniería en sistemas con el objetivo de crear una plataforma confiable y accesible que fomente el interés en inversiones dentro del mercado local...</p>
     </div>
 
-    <!-- Pie de página -->
-    <footer class="text-center py-4">
-        <p class="mb-0">&copy; 2023 InvertInfo. Todos los derechos reservados.</p>
-    </footer>
+    <!-- Módulo de Misión -->
+    <div id="misionModule" class="module">
+        <h2>Nuestra misión</h2>
+        <p>En InvertInfo, nuestra misión es conectar a las personas con oportunidades de inversión en el mercado local. Sabemos que muchas personas desean invertir pero no tienen acceso a información confiable y organizada...</p>
+    </div>
+
+    <!-- Módulo de Visión -->
+    <div id="visionModule" class="module">
+        <h2>Nuestra visión</h2>
+        <p>Nuestra visión es convertirnos en la principal fuente de información sobre inversiones en empresas locales y extranjeras con operaciones en el país...</p>
+    </div>
+
+    <!-- Módulo de Valores -->
+    <div id="valoresModule" class="module">
+        <h2>Nuestros valores</h2>
+        <ul>
+            <li><strong>Transparencia:</strong> Nos comprometemos a ofrecer datos reales y verificados para tomar decisiones de inversión informadas.</li>
+            <li><strong>Accesibilidad:</strong> Diseñamos una plataforma intuitiva para cualquier persona interesada en el mundo de las inversiones.</li>
+            <li><strong>Educación:</strong> Creemos que la educación financiera es fundamental, y estamos aquí para brindar recursos y apoyo en ese camino.</li>
+        </ul>
+    </div>
+</div>
+
+<footer>
+    <p>© 2024 InvertInfo. Todos los derechos reservados.</p>
+</footer>
+
+<script>
+    // Mostrar/ocultar módulos
+    document.getElementById('quienesSomosTitle').addEventListener('click', function() {
+        toggleModule('quienesSomosModule');
+    });
+    document.getElementById('misionTitle').addEventListener('click', function() {
+        toggleModule('misionModule');
+    });
+    document.getElementById('visionTitle').addEventListener('click', function() {
+        toggleModule('visionModule');
+    });
+    document.getElementById('valoresTitle').addEventListener('click', function() {
+        toggleModule('valoresModule');
+    });
+
+    function toggleModule(moduleId) {
+        var modules = document.querySelectorAll('.module');
+        modules.forEach(function(module) {
+            module.classList.remove('show');
+        });
+
+        var module = document.getElementById(moduleId);
+        module.classList.add('show');
+    }
+</script>
+
 </body>
 </html>
