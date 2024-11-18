@@ -9,6 +9,7 @@ from sklearn.preprocessing import MinMaxScaler
 from datetime import datetime
 import bcrypt
 import plotly.graph_objects as go
+import os
 
 app = Flask(__name__,template_folder='template')
 prediccion_data = None
@@ -18,6 +19,15 @@ app.config['MYSQL_USER']='root'
 app.config['MYSQL_PASSWORD']='GERDios#1'
 app.config['MYSQL_DB']='mydb'
 app.config['MYSQL_CURSORCLASS']='DictCursor'
+
+# Configuración de conexión usando variables de entorno
+app.config['MYSQL_HOST'] = os.getenv('DB_HOST')  # Endpoint de Amazon RDS
+app.config['MYSQL_USER'] = os.getenv('DB_USER')  # Usuario configurado en RDS
+app.config['MYSQL_PASSWORD'] = os.getenv('DB_PASSWORD')  # Contraseña de RDS
+app.config['MYSQL_DB'] = os.getenv('DB_NAME')  # Nombre de la base de datos en RDS
+app.config['MYSQL_PORT'] = int(os.getenv('DB_PORT', 3306))  # Puerto de MySQL (3306 por defecto)
+app.config['MYSQL_CURSORCLASS'] = 'DictCursor' 
+
 
 API_KEY = 'G5be0vtfR94ws10uA1MsC8f3zBJwbNZE'
 
