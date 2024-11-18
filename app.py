@@ -14,11 +14,6 @@ import os
 app = Flask(__name__,template_folder='template')
 prediccion_data = None
 
-app.config['MYSQL_HOST']='localhost'
-app.config['MYSQL_USER']='root'
-app.config['MYSQL_PASSWORD']='GERDios#1'
-app.config['MYSQL_DB']='mydb'
-app.config['MYSQL_CURSORCLASS']='DictCursor'
 
 # Configuración de conexión usando variables de entorno
 app.config['MYSQL_HOST'] = os.getenv('DB_HOST')  # Endpoint de Amazon RDS
