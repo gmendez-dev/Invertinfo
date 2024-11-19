@@ -16,7 +16,7 @@ app = Flask(__name__,template_folder='template')
 prediccion_data = None
 
 if __name__ == '__main__':
-    app.secret_key = os.getenv('SECRET_KEY')
+    app.secret_key = os.getenv("SECRET_KEY")
     app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
 
 # Certificado desde la variable
