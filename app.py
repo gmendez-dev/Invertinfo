@@ -15,6 +15,10 @@ import tempfile
 app = Flask(__name__,template_folder='template')
 prediccion_data = None
 
+if __name__ == '__main__':
+    app.secret_key = os.getenv('SECRET_KEY')
+    app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
+
 # Certificado desde la variable
 certificado_contenido = os.getenv("MYSQL_SSL_CA")
 
@@ -50,9 +54,6 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 if certificado_path:
     app.config['MYSQL_OPTIONS'] = {'ssl': {'ca': certificado_path}}
 
-if __name__ == '__main__':
-    app.secret_key = os.getenv('SECRET_KEY')
-    app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
 
 API_KEY = 'G5be0vtfR94ws10uA1MsC8f3zBJwbNZE'
 
