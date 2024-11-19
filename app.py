@@ -10,10 +10,34 @@ from datetime import datetime
 import bcrypt
 import plotly.graph_objects as go
 import os
+import tempfile
 
 app = Flask(__name__,template_folder='template')
 prediccion_data = None
 
+# Certificado desde la variable
+certificado_contenido = os.getenv("MYSQL_SSL_CA")
+
+#archivo temporal para almacenar el certificado
+certificado_path = None
+if certificado_contenido:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pem") as cert_file:
+        cert_file.write(certificado_contenido.encode('utf-8'))
+        certificado_path = cert_file.name
+
+#app.config['MYSQL_HOST']='localhost'
+#app.config['MYSQL_USER']='root'
+#app.config['MYSQL_PASSWORD']='GERDios#1'
+#app.config['MYSQL_DB']='mydb'
+#app.config['MYSQL_CURSORCLASS']='DictCursor'
+
+#app.config['MYSQL_HOST']='mydb.cv2ui4ow627i.us-east-2.rds.amazonaws.com'
+#app.config['MYSQL_USER']='root'
+#app.config['MYSQL_PASSWORD']='GERDios#1'
+#app.config['MYSQL_DB']='mydb1'
+#app.config['MYSQL_PORT']=3306
+#app.config['MYSQL_CURSORCLASS']='DictCursor'
+#app.config['MYSQL_OPTIONS'] = { 'ssl': {'ca':'/us-east-2-bundle.pem'}} 
 
 # Configuración de conexión usando variables de entorno
 app.config['MYSQL_HOST'] = os.getenv('DB_HOST')  # Endpoint de Amazon RDS
@@ -23,6 +47,8 @@ app.config['MYSQL_DB'] = os.getenv('DB_NAME')  # Nombre de la base de datos en R
 app.config['MYSQL_PORT'] = int(os.getenv('DB_PORT', 3306))  # Puerto de MySQL (3306 por defecto)
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor' 
 
+if certificado_path:
+    app.config['MYSQL_OPTIONS'] = {'ssl': {'ca': certificado_path}}
 
 API_KEY = 'G5be0vtfR94ws10uA1MsC8f3zBJwbNZE'
 
@@ -441,43 +467,41 @@ def login():
         cur.close()
 
         if account:
-            # Recuperar la contraseña encriptada almacenada en la base de datos
-            contraseña_encriptada = account['password']
+            # Verificar tipos de datos devueltos
+            print("Tipo de account['idusuario']:", type(account['idusuario']))
+            print("Tipo de account['tipo_usuario_idtipo_usuario']:", type(account['tipo_usuario_idtipo_usuario']))
+            print("Contenido de account:", account)
 
-            # Verificar si la contraseña ingresada coincide con la encriptada
-            if bcrypt.checkpw(_password.encode('utf-8'), contraseña_encriptada.encode('utf-8')):
-                # Si las contraseñas coinciden, almacenar información en la sesión
-                session['logueado'] = True
-                session['idusuario'] = account['idusuario']
-                session['tipo_usuario_idtipo_usuario'] = account['tipo_usuario_idtipo_usuario']
-                session['nombre_usuario'] = account['nombre']
+            # Convertir a int explícitamente si es necesario
+            session['idusuario'] = int(account['idusuario'])
+            session['tipo_usuario_idtipo_usuario'] = int(account['tipo_usuario_idtipo_usuario'])
+            session['nombre_usuario'] = account['nombre']
 
-                # Redireccionar según el tipo de usuario
-                if session['tipo_usuario_idtipo_usuario'] == 1:
-                    # Cargar datos para la vista de administrador
-                    fechas, totales, error_usuarios = graficar_us_totales()
-                    data_empresas, error_empresas = mostrar_empresas_graf()
+            print("Tipo de session['tipo_usuario_idtipo_usuario'] antes del condicional:", type(session['tipo_usuario_idtipo_usuario']))
 
-                    return render_template("admin1.html",
-                                           fechas=fechas or [],
-                                           totales=totales or [],
-                                           tipos_empresas=data_empresas["tipos"] if data_empresas else [],
-                                           totales_empresas=data_empresas["totales_empresas"] if data_empresas else [],
-                                           error_usuarios=error_usuarios,
-                                           error_empresas=error_empresas)
-                elif session['tipo_usuario_idtipo_usuario'] == 2:
-                    # Cargar datos para la vista de usuario
-                    nombres_empresas, cambios_proyeccion = graf_login()
-                    return render_template("user1.html", nombres_empresas=nombres_empresas, cambios_proyeccion=cambios_proyeccion)
+            # Redireccionar según el tipo de usuario
+            if session['tipo_usuario_idtipo_usuario'] == 1:
+                fechas, totales, error_usuarios = graficar_us_totales()
+                data_empresas, error_empresas = mostrar_empresas_graf()
 
-            else:
-                # Si las contraseñas no coinciden
-                return render_template('login.html', mensaje="Contraseña Incorrecta")
+                return render_template("admin1.html",
+                                       fechas=fechas or [],
+                                       totales=totales or [],
+                                       tipos_empresas=data_empresas["tipos"] if data_empresas else [],
+                                       totales_empresas=data_empresas["totales_empresas"] if data_empresas else [],
+                                       error_usuarios=error_usuarios,
+                                       error_empresas=error_empresas)
+            elif session['tipo_usuario_idtipo_usuario'] == 2:
+                nombres_empresas, cambios_proyeccion = graf_login()
+                return render_template("user1.html", nombres_empresas=nombres_empresas, cambios_proyeccion=cambios_proyeccion)
+
         else:
             # Si el usuario no existe
             return render_template('login.html', mensaje="No existe el usuario.")
 
     return render_template('login.html')
+
+
 
 
 
