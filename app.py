@@ -506,10 +506,6 @@ def login():
 #Funcion Registro
 @app.route('/crear-registro', methods=["GET", "POST"])
 def crear_registro():
-    # Verificar si el usuario está logueado
-    if 'idusuario' not in session:
-        flash("Por favor, inicia sesión para acceder a esta funcionalidad.", "error")
-        return redirect(url_for('home'))
 
     # Si es un POST, procesamos los datos del formulario
     if request.method == "POST":
