@@ -248,7 +248,6 @@ def mostrar_empresas_graf():
     except Exception as e:
         return None, f"Error al obtener los datos de empresas: {str(e)}"
 
-
 def graf_login():
     url = f"https://financialmodelingprep.com/api/v3/stock-screener?marketCapMoreThan=1000000000&volumeMoreThan=5000000&apikey={API_KEY}"
     
@@ -346,8 +345,6 @@ def editar_usuario():
 
     # Renderizar el formulario con los datos actuales del usuario
     return render_template('editar_usuario.html', usuarios=usuario)
-
-
 
 @app.route('/crud_empresas')
 def crud_empresas():
@@ -456,7 +453,7 @@ def eliminar_c():
 
     return redirect(url_for('home'))
 
-# Ruta de login
+#Ruta de login
 @app.route('/acceso-login', methods=["GET", "POST"])
 def login():
     if request.method == 'POST' and 'txtcorreo' in request.form and 'txtpassword' in request.form:
@@ -505,10 +502,6 @@ def login():
             return render_template('login.html', mensaje="No existe el usuario.")
 
     return render_template('login.html')
-
-
-
-
 
 #Funcion Registro
 @app.route('/crear-registro', methods=["GET", "POST"])
@@ -562,7 +555,6 @@ def crear_registro():
         return redirect(url_for('login'))
 
     return render_template('registro.html')
-
 
 #Funcion registro empresa
 @app.route('/agregar_empresas', methods=["GET", "POST"])

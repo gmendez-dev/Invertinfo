@@ -1,5 +1,3 @@
-{% include("encabezado2.html") %}
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -19,6 +17,7 @@
         background-attachment: fixed;
         margin: 0;
         padding-bottom: 70px; /* Añadido para que el contenido no se superponga al footer */
+        padding-top: 70px;
     }
 
     .container {
@@ -88,6 +87,9 @@
 </style>
 
 <body>
+    <div class="fixed-header">
+        {% include("encabezado2.html") %}
+    </div>
 
 <!-- Barra lateral -->
 <div class="sidebar">
