@@ -31,7 +31,7 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra sutil */
         }
 
-        .search-box, .table-container {
+        .search-box, .table-container, article {
             background-color: #fff;
             padding: 20px;
             border-radius: 8px;
@@ -177,10 +177,34 @@
                 </div>
 
                 <!-- Artículo explicativo -->
-                <article class="mt-4 p-4" style="background-color: white; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                <article class="mt-4">
                     <h5>¿Qué es la utilidad proyectada?</h5>
-                    <p>La utilidad proyectada en esta herramienta representa el total estimado de dividendos que podrías recibir durante el periodo de inversión indicado.</p>
-                    <!-- Resto del contenido del artículo -->
+                    <p>
+                        La utilidad proyectada en esta herramienta representa el total estimado de dividendos que podrías recibir durante 
+                        el periodo de inversión indicado. Esta proyección se basa en los dividendos históricos de la empresa seleccionada 
+                        y asume un crecimiento promedio anual en los dividendos (si se observa crecimiento en años anteriores).
+                    </p>
+                    <h5>¿Cómo se calcula?</h5>
+                    <p>
+                        Para calcular la utilidad proyectada, se utiliza el promedio de los dividendos por acción de los años pasados y 
+                        el crecimiento promedio anual de estos dividendos (si aplica). La fórmula incluye:
+                    </p>
+                    <ul>
+                        <li><strong>Promedio de dividendos:</strong> Los dividendos totales divididos entre los años disponibles.</li>
+                        <li><strong>Tasa de crecimiento promedio:</strong> El porcentaje promedio de aumento en los dividendos año con año.</li>
+                        <li><strong>Monto de inversión:</strong> La cantidad de dinero que decides invertir.</li>
+                    </ul>
+                    <p>
+                        La utilidad se calcula acumulativamente durante cada año del periodo proyectado, considerando un crecimiento compuesto 
+                        (si se aplica). En el caso de periodos de un año, la proyección se realiza con base en el último dividendo conocido, 
+                        sin ajuste por crecimiento.
+                    </p>
+                    <h5>¿La utilidad es anual o total?</h5>
+                    <p>
+                        La utilidad proyectada mostrada en los resultados es <strong>el total acumulado</strong> que podrías recibir 
+                        durante todo el periodo de inversión, no una cifra anual. Si deseas calcular el promedio anual, puedes dividir la utilidad 
+                        total entre el número de años proyectados.
+                    </p>
                 </article>
             </div>
         </div>
