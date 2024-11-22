@@ -171,6 +171,7 @@
         </div>
 
         <!-- Tabla de Predicción a la derecha -->
+         <div class="col-md-8">
         <div class="table-container">
             <h2>Datos de Predicción</h2>
             {% if datas %}
@@ -205,16 +206,19 @@
             <form action="/guardar_prediccion" method="post">
                 <button type="submit" class="btn btn-primary">Guardar Predicción</button>
             </form>
+        
+            <!-- Explicación de los datos -->
+            <article style="background-color: #ffffff; padding: 15px; margin-top: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+            <h3>Explicación de los Datos</h3>
+            <p>El valor predicho es el estimado para la acción de la empresa, calculado mediante nuestro modelo de predicción.</p>
+            <p>El valor real es el precio actual de la acción en el mercado.</p>
+            <p>La diferencia es la resta entre el valor real y el valor predicho. Esta diferencia se muestra siempre como un número positivo, para que puedas ver la magnitud de la variación sin necesidad de preocuparte por los valores negativos.</p>
+            </article>
+        </div>
         </div>
     </div>
 
-    <!-- Explicación de los datos -->
-    <article style="background-color: #ffffff; padding: 15px; margin-top: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
-        <h3>Explicación de los Datos</h3>
-        <p>El valor predicho es el estimado para la acción de la empresa, calculado mediante nuestro modelo de predicción.</p>
-        <p>El valor real es el precio actual de la acción en el mercado.</p>
-        <p>La diferencia es la resta entre el valor real y el valor predicho. Esta diferencia se muestra siempre como un número positivo, para que puedas ver la magnitud de la variación sin necesidad de preocuparte por los valores negativos.</p>
-    </article>
+
     
 </body>
 </html>
